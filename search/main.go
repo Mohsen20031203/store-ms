@@ -3,10 +3,24 @@ package main
 import (
 	"fmt"
 	"math"
+	"runtime"
+	"sort"
+
+	"golang.org/x/exp/rand"
 )
 
+func measureMemoryUsage() uint64 {
+	var memStats runtime.MemStats
+	runtime.ReadMemStats(&memStats)
+	return memStats.Alloc
+}
+
+var cnt int
+
 func LinearSearch(arr []int, target int) int {
+	var count int
 	for i, num := range arr {
+		count++
 		if num == target {
 			return i // Found the target
 		}
@@ -15,12 +29,14 @@ func LinearSearch(arr []int, target int) int {
 }
 
 func BinarySearch(arr []int, target int) int {
-	var cnt int
+	var count int
 	left, right := 0, len(arr)-1
 	for left <= right {
+		count++
 		cnt++
 		mid := left + (right-left)/2
 		if arr[mid] == target {
+			cnt = 0
 			return mid // Found
 		} else if arr[mid] < target {
 			left = mid + 1
@@ -87,58 +103,127 @@ func ExponentialSearch(arr []int, target int) int {
 
 	i := 1
 	for i < len(arr) && arr[i] <= target {
-		i *= 2
+		cnt++
+		i *= 3
 	}
 	m := arr[:min(i, len(arr))]
 	n := BinarySearch(m, target)
 	return n
 }
 
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+func FibonacciSearch(arr []int, target int) int {
+	n := len(arr)
+
+	// Find the smallest Fibonacci number greater than or equal to n
+	fibM2 := 0            // (m-2)'th Fibonacci
+	fibM1 := 1            // (m-1)'th Fibonacci
+	fibM := fibM1 + fibM2 // m'th Fibonacci
+
+	for fibM < n {
+		fibM2, fibM1 = fibM1, fibM
+		fibM = fibM1 + fibM2
+	}
+
+	offset := -1
+
+	// Main loop for searching
+	for fibM > 1 {
+		i := min(offset+fibM2, n-1)
+
+		if arr[i] < target {
+			fibM, fibM1, fibM2 = fibM1, fibM2, fibM1-fibM2
+			offset = i
+		} else if arr[i] > target {
+			fibM, fibM1, fibM2 = fibM2, fibM1-fibM2, fibM2-fibM1
+		} else {
+			return i
+		}
+	}
+
+	if fibM1 == 1 && offset+1 < n && arr[offset+1] == target {
+		return offset + 1
+	}
+
+	return -1
+}
+
+func TernarySearch(arr []int, left, right, target int) int {
+	if right >= left {
+		mid1 := left + (right-left)/3
+		mid2 := right - (right-left)/3
+
+		if arr[mid1] == target {
+			return mid1
+		}
+		if arr[mid2] == target {
+			return mid2
+		}
+
+		if target < arr[mid1] {
+			return TernarySearch(arr, left, mid1-1, target)
+		} else if target > arr[mid2] {
+			return TernarySearch(arr, mid2+1, right, target)
+		} else {
+			return TernarySearch(arr, mid1+1, mid2-1, target)
+		}
+	}
+	return -1
+}
+
 func main() {
 
-	ArrayUnsort := [100]int{23, 89, 45, 12, 77, 90, 33, 56, 98, 34,
-		67, 21, 5, 92, 41, 38, 74, 60, 83, 15,
-		11, 95, 6, 50, 27, 36, 69, 82, 49, 18,
-		64, 29, 93, 10, 97, 87, 72, 4, 58, 46,
-		70, 25, 55, 30, 16, 79, 88, 8, 39, 47,
-		62, 59, 78, 2, 20, 91, 43, 85, 32, 31,
-		53, 66, 13, 40, 86, 35, 99, 37, 48, 81,
-		22, 3, 80, 9, 52, 54, 28, 1, 63, 57,
-		68, 17, 61, 7, 24, 75, 76, 44, 71, 26,
-		42, 14, 65, 51, 96, 19, 84, 73, 94, 100,
+	arr := make([]int, 100000)
+	for i := range arr {
+		arr[i] = rand.Intn(1000000)
+	}
+	arr2 := make([]int, 100000)
+	for i := range arr2 {
+		arr2[i] = rand.Intn(1000000)
 	}
 
-	ArraySort := [100]int{
-		2, 5, 9, 11, 14, 19, 23, 26, 30, 34,
-		37, 41, 45, 48, 53, 57, 60, 63, 67, 70,
-		74, 78, 81, 84, 88, 91, 94, 97, 101, 105,
-		108, 112, 115, 119, 123, 126, 130, 134, 137, 140,
-		144, 148, 151, 154, 158, 161, 165, 168, 172, 176,
-		179, 183, 187, 190, 193, 197, 200, 204, 208, 211,
-		214, 218, 221, 225, 229, 232, 236, 239, 242, 246,
-		250, 253, 257, 261, 264, 268, 271, 275, 279, 282,
-		286, 289, 293, 296, 300, 304, 307, 311, 315, 318,
-		322, 325, 329, 332, 336, 339, 343, 347, 350, 354,
-	}
+	sort.Ints(arr2)
+	ArraySort := arr2
 
-	Binary := BinarySearch(ArraySort[:], 26)
+	// Measure memory usage before executing searches
+	memBefore := measureMemoryUsage()
+
+	Binary := BinarySearch(ArraySort[:], 4620)
 	if Binary != -1 {
 		fmt.Println("right in BinarySort")
 	}
-	Line := LinearSearch(ArrayUnsort[:], 5)
+	Line := LinearSearch(arr[:], 342725)
 	if Line != -1 {
 		fmt.Println("right in LinearSearch")
 	}
-	Jump := JumpSearch(ArraySort[:], 158)
+	Jump := JumpSearch(ArraySort[:], 601202)
 	if Jump != -1 {
 		fmt.Println("right in JumpSearch")
 	}
-	Interpolation := InterpolationSearch(ArraySort[:], 311)
+	Interpolation := InterpolationSearch(ArraySort[:], 601202)
 	if Interpolation != -1 {
 		fmt.Println("right in Interpolation")
 	}
-	Exponential := ExponentialSearch(ArraySort[:], 26)
+	Exponential := ExponentialSearch(ArraySort[:], 4620)
 	if Exponential != -1 {
 		fmt.Println("right in Exponential")
 	}
+	Fibonacci := FibonacciSearch(ArraySort, 499407)
+	if Fibonacci != -1 {
+		fmt.Println("right in Fibonacci")
+	}
+	Ternary := TernarySearch(ArraySort, 0, len(ArraySort), 700380)
+	if Ternary != -1 {
+		fmt.Println("right in Fibonacci")
+	}
+
+	// Measure memory usage after executing searches
+	memAfter := measureMemoryUsage()
+	fmt.Printf("Memory used: %d bytes\n", memAfter-memBefore)
 }
