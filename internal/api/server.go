@@ -36,5 +36,7 @@ func (s *Server) setupRouter() {
 			"massage": "Ok",
 		})
 	})
+	router.GET("user/:id", s.User)
+
 	s.Router = router
 }

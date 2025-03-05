@@ -10,27 +10,20 @@ type Order struct {
 	ID         uint           `gorm:"primaryKey" json:"id"`
 	TotalPrice float64        `json:"total_price"`
 	Status     string         `json:"status"` // pending, shipped, delivered, canceled
-	Number     uint           `gorm:"foreignKey:OrderID" json:"items"`
+	Number     uint           `gorm:"primaryKey" json:"items"`
 	CreatedAt  time.Time      `json:"created_at"`
 	UpdatedAt  time.Time      `json:"updated_at"`
 	DeletedAt  gorm.DeletedAt `gorm:"index" json:"-"`
 }
 
-type User struct {
-	ID           uint           `gorm:"primaryKey" json:"id"`
-	Name         string         `json:"name"`
-	Email        string         `gorm:"uniqueIndex" json:"email"`
-	PasswordHash string         `json:"-"`
-	Address      string         `json:"address"`
-	PhoneNumber  string         `json:"phone_number"`
-	Orders       []Order        ` json:"orders"`
-	Cart         Cart           `gorm:"foreignKey:UserID" json:"Cart"`
-	CreatedAt    time.Time      `json:"created_at"`
-	UpdatedAt    time.Time      `json:"updated_at"`
-	DeletedAt    gorm.DeletedAt `gorm:"index" json:"-"`
+type Review struct {
+	ID        uint      `gorm:"primaryKey" json:"id"`
+	UserId    uint      `json:"user_id"`
+	Rating    float64   `json:"rating"`
+	Comment   string    `json:"comment"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
-// ------------------------------------------------------
 type Product struct {
 	ID          uint           `gorm:"primaryKey" json:"id"`
 	Name        string         `json:"name"`
@@ -47,17 +40,31 @@ type Product struct {
 	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
 }
 
+type User struct {
+	gorm.Model   `json:"-"`
+	ID           uint           `gorm:"primaryKey" json:"id"`
+	Name         string         `gorm:"type:varchar(500)" json:"name"`
+	Email        string         `gorm:"type:varchar(500)" json:"email"`
+	PasswordHash string         `gorm:"type:varchar(500)" json:"-"`
+	Address      string         `gorm:"type:varchar(500)" json:"address"`
+	PhoneNumber  string         `gorm:"type:varchar(500)" json:"phone_number"`
+	Orders       []Order        `gorm:"foreignKey:UserID" json:"orders"`
+	CreatedAt    time.Time      `json:"created_at"`
+	UpdatedAt    time.Time      `json:"updated_at"`
+	DeletedAt    gorm.DeletedAt `gorm:"index" json:"-"`
+}
+
+// ------------------------------------------------------
+
 type Category struct {
-	ID       uint      `gorm:"primaryKey" json:"id"`
-	Name     string    `json:"name"`
-	ParentID *uint     `json:"parent_id"`
-	Products []Product `gorm:"foreignKey:CategoryID" json:"products"`
+	ID       uint   `gorm:"primaryKey" json:"id"`
+	Name     string `json:"name"`
+	ParentID *uint  `json:"parent_id"`
 }
 
 type Brand struct {
-	ID       uint      `gorm:"primaryKey" json:"id"`
-	Name     string    `json:"name"`
-	Products []Product `gorm:"foreignKey:BrandID" json:"products"`
+	ID   uint   `gorm:"primaryKey" json:"id"`
+	Name string `json:"name"`
 }
 type Payment struct {
 	ID            uint      `gorm:"primaryKey" json:"id"`
@@ -70,25 +77,13 @@ type Payment struct {
 }
 
 type Cart struct {
-	ID        uint       `gorm:"primaryKey" json:"id"`
-	UserID    uint       `json:"user_id"`
 	CreatedAt time.Time  `json:"created_at"`
 	UpdatedAt time.Time  `json:"updated_at"`
 	Items     []CartItem `gorm:"foreignKey:CartID" json:"items"`
 }
 
 type CartItem struct {
-	ID       uint    `gorm:"primaryKey" json:"id"`
-	CartID   uint    `json:"cart_id"`
-	Product  Product `gorm:"foreignKey:ProductID"`
-	Quantity int     `json:"quantity"`
-	Price    float64 `json:"price"`
-}
-
-type Review struct {
-	ID        uint      `gorm:"primaryKey" json:"id"`
-	User      User      `json:"user"`
-	Rating    float64   `json:"rating"`
-	Comment   string    `json:"comment"`
-	CreatedAt time.Time `json:"created_at"`
+	ProductId uint    `gorm:"foreignKey:ProductID"`
+	Quantity  int     `json:"quantity"`
+	Price     float64 `json:"price"`
 }
