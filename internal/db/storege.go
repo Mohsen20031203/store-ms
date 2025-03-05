@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"hello/config"
 	"hello/internal/db/models"
-	"log"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -12,7 +11,8 @@ import (
 )
 
 type Storege struct {
-	DB *gorm.DB
+	DB     *gorm.DB
+	Config config.Config
 }
 
 func NewStorege(config config.Config) (*Storege, error) {
@@ -23,27 +23,18 @@ func NewStorege(config config.Config) (*Storege, error) {
 		&gorm.Config{
 			Logger: logger.Default.LogMode(logger.Error),
 		})
-
-	if err := database.Exec("SELECT 1").Error; err != nil {
-		log.Fatalf("Database connection test failed: %v", err)
-	}
-
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}
 
-	err = database.AutoMigrate(
-		&models.User{},
-		&models.Order{},
-		//&models.Review{},
-		//&models.Brand{},
-		//&models.Category{},
-		//&models.Payment{},
+	err = database.AutoMigrate(&models.Category{},
+		&models.Report{},
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}
 	return &Storege{
-		DB: database,
+		DB:     database,
+		Config: config,
 	}, nil
 }
